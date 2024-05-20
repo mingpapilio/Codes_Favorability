@@ -6,4 +6,4 @@ Simulations folder contains the (1) source codes for the eco-evolutionary indivi
 
 Empirical analysis folder contains the codes and data used in making the corresponding figures.
 
-If you have any questions, please contact *ming.liu.ac[@]gmail.com* for simulation-related enquiries and *tzumanhung9527@gmail.com* for empirical-related enquiries.
+If you have any questions, please contact *ming.liu.ac[@]gmail.com* for simulation-related enquiries and *tzumanhung9527[@]gmail.com* for empirical-related enquiries.
