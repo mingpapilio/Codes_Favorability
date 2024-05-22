@@ -73,8 +73,8 @@ p_value_lm = function(df_x, df_y, xlim, ylim){
 ########## Main ##########
 #---- load data ----
 df.all <- read.csv('./FAV_hv_data.csv',header = TRUE)
-all_data_ = df.all %>% tidyr::drop_na(TTRS_CTrange, TTRS_W_length, TTRS_Weight, TTRS_B_length)
-all_data = all_data_ %>% dplyr::select(TTRS_CTmin, TTRS_CTmax, Family, Species, Location, Sample.Size, STmean, TTRS_DTR, STR, Group) #TTRS_Tmean
+all_data_ = df.all %>% tidyr::drop_na(CTrange, W_length, Weight, B_length)
+all_data = all_data_ %>% dplyr::select(CTmin, CTmax, Family, Species, Location, Sample.Size, STmean, DTR, STR, Group) #Tmean
 
 ## grouping species into high, mid and low STmean, DTR and STR ####
 all_data = all_data %>% mutate(Tmean_g = ifelse(Group == 'M1'|Group == 'M2'|Group == 'T1','High', 
@@ -85,8 +85,8 @@ all_data = all_data %>% mutate(STR_g = ifelse(Group == 'C4'|Group == 'C3'|Group 
                                                   ifelse(Group == 'C1'|Group == 'T2'|Group == 'T3', 'Mid','Low')))
 
 # Standardize traits
-all_data$TTRS_CTmax_sd = decostand(all_data$TTRS_CTmax,"standardize",na.rm=T)[,1]
-all_data$TTRS_CTmin_sd = decostand(all_data$TTRS_CTmin,"standardize",na.rm=T)[,1]
+all_data$CTmax_sd = decostand(all_data$CTmax,"standardize",na.rm=T)[,1]
+all_data$CTmin_sd = decostand(all_data$CTmin,"standardize",na.rm=T)[,1]
 
 #---- Calculate total hyper-volume (each assemblage) ----
 # create result data frame
@@ -120,7 +120,7 @@ for(loc in c('Malaysia', 'Taiwan', 'China')){
       weight = comm1/sum(comm1)
       
       # calculating hyper-volume
-      trait_a = dplyr::select(df2, TTRS_CTmax_sd, TTRS_CTmin_sd)
+      trait_a = dplyr::select(df2, CTmax_sd, CTmin_sd)
       rownames(trait_a) = df2$Species
       hvlist_a <- hypervolume::hypervolume_gaussian(trait_a, weight = weight)
      
@@ -137,7 +137,7 @@ for(loc in c('Malaysia', 'Taiwan', 'China')){
 # Average Tmean/DTR of 3 locations
 N_avg = all_data %>% group_by(Location, Group) %>% summarise(N = n())
 Tmean_avg = all_data %>% group_by(Location, Group) %>% summarise(Tmean = mean(STmean)) #%>% arrange(desc(Tmean))
-DTR_avg = all_data %>% group_by(Location, Group) %>% summarise(DTR = mean(TTRS_DTR)) #%>% arrange(desc(DTR))
+DTR_avg = all_data %>% group_by(Location, Group) %>% summarise(DTR = mean(DTR)) #%>% arrange(desc(DTR))
 STR_avg = all_data %>% group_by(Location, Group) %>% summarise(STR = mean(STR)) #%>% arrange(desc(STR))
 
 df_$N_all = NA
