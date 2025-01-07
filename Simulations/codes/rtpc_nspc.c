@@ -32,19 +32,19 @@
 // Main code
 int main( int argc, char *argv[] ){
     // Switches
-        int s0= 1;          // 0: Deterministic performance curves, 1: asymmetric thermal performance curves generated from distributions (random), 2: 2-species case
+        int s0= 1;          // 0: Deterministic performance curves, 1: asymmetric thermal performance curves generated from distributions (random), 2: 2-species case, 3: Normally distributed curve (probability distribution function)
         int s1= 1;          // 0: Ecological model, 1: Evolutionary model with migration of species
         int s2= 0;          // 0: No variation in the volume of species performance curve, 1: weaker trade-off, some species can be stronger than others
         int s3= 1;          // 0: Fecundity is independent with average temperature, 1: dependent with average temperature 
         int s4= 0;          // 0: White noise, 1: Sine wave
         if(s0==2) s1=0;
     // Execution parameters
-        int T_limit= 5E3;   // Time limit for number of iterations
+        int T_limit= 5E3;       // Duration
         if(s1==1) T_limit= 1E5;
-        int N_rep= 50;      // Number of repeats for each environmental condition
-        int T_birthlog= 100; // Time points of counting species birth rate (last xx time steops of the simulation)
+        int N_rep= 50;          // Number of repeats for each environmental condition
+        int T_birthlog= 100;    // Time points of counting species birth rate (last xx time steops of the simulation)
     // Population parameters
-        int N_patch= 200;       // Number of patches in the community
+        int N_patch= 200;       // Number of patches in the whole community
         int N_spcs= 50;         // Maximal number of species in the community
         int N_ini= 3;           // Initial population size per species per patch  
         int N_samp= 10;         // Number of sampling for producing offspring
@@ -53,33 +53,33 @@ int main( int argc, char *argv[] ){
         if(s0==2) N_spcs_ini= 2;
         int N_spcs_samp= 100;   // Number of sampling if a species has extinct, used in evolutionary model
         int N_patch_newsp= 10;  // Number of patch to initialise the new species
-        //
+        // Life history event probabilities
         double mortality= 0.04;      // Mortality of each individual
         double prob_migrate= 0.001;  // Probability of getting new species migrating to the community, used in evolutionary model
         // Parameters for generating thermal performance curve
-        double avg_topt= 20.0;  // Average of temperature of optimal thermal performance (Topt)
-        double sd_topt= 7.5;    // SD of Topt
-        double avg_tinc= 5.0;   // Average of Tinc, the distance between critical maximal temperature (CTmax) and Topt
-        double sd_tinc= 2.5;    // SD of Tinc
+        double avg_topt= 25.0;  // Average of temperature of optimal thermal performance (Topt)
+        double sd_topt= 2.0;    // SD of Topt
+        double avg_tinc= 10.0;  // Average of Tinc, the distance between critical maximal temperature (CTmax) and Topt
+        double sd_tinc= 5.0;    // SD of Tinc
         double avg_tsgm= 5.0;   // Average of sigma, decay coefficient for thermal performance below Topt
         double sd_tsgm= 2.5;    // SD of sigma
     // Temperaure distribution (environmental factors)
         int env_span= 1;        // Time scale of environmental episode (how frequent to fluctuate)
-        int env_scale= 50;     // Relative time scale of long-term to short-term variaitons
+        int env_scale= 50;      // Relative time scale of long-term to short-term variaitons
         double tmp_env;         // Mean temperature of temperature distribution
         double curr_env;        // Current tempreature
         double past_env;        // Temperature of the last time-step, check for updating population growth parameters
         // Normal distribution of temperature
-            double mean_env= 18.0;  // Average temperature
-            double sd_env=	0.0;// Amplitude of long-term variation (SD of a normal distribution)
-            double sd_env_short= 0.5;
+            double mean_env= 18.0;      // Average temperature
+            double sd_env=	0.0;        // Amplitude of long-term variation (SD of a normal distribution)
+            double sd_env_short= 0.5;   // Amplitude of short-term variation (SD of a normal distribution)
             double u1, u2, mean_env_short;
         // Mean temperature settings for fecundity
             double env_max= 38.0;       // Critical temperature that fecundity is zero for all above temperature
             double env_opt= 32.0;       // The most-fecund temperature
             double tmean_sigma= 7.5;    // Decay coefficient for fecundity below optimal temperature
             double fecund_scale= 3.0;   // Scaling coefficient
-            double fecundity= 2.0;      // 
+            double fecundity= 2.0;      // Fecundity coefficient per time step per patch
             double fecund_intg, fecund_decm, fecund_stoc;
     //********** We do not recommend changing things below this line  **********//
     // Indices of species matrix
@@ -119,12 +119,12 @@ int main( int argc, char *argv[] ){
         log= fopen("extinction_log.txt", "w");
         fprintf(log, "Tmean\tTsd\tTsd_short\tTmin\tTmax\tTopt\tLifespan\tRep\n");
     // Read in variables
-    if( argc == 3 ) {
+    if( argc == 4 ) {
         int i;
-        // mean_env= get_double(argv[1]);
-        sd_env_short= get_double(argv[1]);
-        sd_env= get_double(argv[2]);
-        // printf("Avg is %lf, Var is %lf.\n", mean_env, sd_env_short);
+        mean_env= get_double(argv[1]);
+        sd_env_short= get_double(argv[2]);
+        sd_env= get_double(argv[3]);
+        printf("Tmean is %lf, sd_env_short is %lf, sd_env is %lf.\n", mean_env, sd_env_short, sd_env);
     }
     else {
         printf("Wrong number of argumets.\n");
@@ -132,14 +132,16 @@ int main( int argc, char *argv[] ){
     // Main Code
     for(rep=0; rep<N_rep; ++rep){
 
-    // Initialisation of the population
+    // Initialisation of the community
     for(i=0; i<N_patch; ++i){
         for(j=0; j<N_spcs; ++j){
             if(j<N_spcs_ini) Popn[i][j]= N_ini;
             else Popn[i][j]= 0.0;
         }
     }
-    // Initialisation of each species /////// Add standardisation
+
+    // Initialisation of species
+    // Test case
     if(s0==2){
         Spcs[0][id_thrs]= 10.0;
         Spcs[0][id_topt]= 30.0;
@@ -153,18 +155,20 @@ int main( int argc, char *argv[] ){
             Spcs[i][id_scal]= (2.0/3*5+5*sqrt(M_PI))/(2.0/3*Spcs[i][id_tinc]+Spcs[i][id_tsgm]*sqrt(M_PI));
         }
     }
+    // Main case
     else{
         for(i=0; i<N_spcs_ini; ++i){
             if(s0==0){
                 Spcs[i][id_thrs]= 10.0;
                 Spcs[i][id_tsgm]= 5.0;
-                Spcs[i][id_topt]= 10+i;
-                Spcs[i][id_tinc]= 5.0;
+                Spcs[i][id_topt]= -2+2*i;
+                Spcs[i][id_tinc]= 3.0;
                 Spcs[i][id_scal]= 1.0;
                 Spcs[i][id_init]= 0.0;
                 Spcs[i][id_prnt]= 0.0;
                 Spcs[i][id_coff]= 0.0;
             }
+            // Asymmetric thermal performance curve setting
             if(s0==1){
                 Spcs[i][id_scal]= -0.1;
                 while((!(Spcs[i][id_scal]> 0.0)||!(Spcs[i][id_tinc]> 0.0))||!(Spcs[i][id_tsgm]> 0.0)){
@@ -179,13 +183,25 @@ int main( int argc, char *argv[] ){
                     Spcs[i][id_coff]= 0.0;
                 }
             }
+            if(s0==3){
+                // Assuming normal distribution, mu= topt, sd= tsgm
+                Spcs[i][id_scal]= 1.0;
+                Spcs[i][id_thrs]= 10.0;
+                Spcs[i][id_topt]= normal_dist_BM(avg_topt,sd_topt,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt));
+                Spcs[i][id_tinc]= 0.0;
+                Spcs[i][id_tsgm]= normal_dist_BM(avg_tsgm,sd_tsgm,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt));
+                if(s2==1) Spcs[i][id_scal]= Spcs[i][id_scal]*normal_dist_BM(1,0.25, dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt)); ///// sd set to 0.25
+                Spcs[i][id_init]= 0.0;
+                Spcs[i][id_prnt]= 0.0;
+                Spcs[i][id_coff]= 0.0;
+            }
         }
         for(i=N_spcs_ini; i<N_spcs; ++i) Spcs[i][id_prnt]= 1.0;
     }
 
-    // Simulation
+    // Start of simulation
     for(t=0; t<T_limit; ++t){
-        // Environmental fluctuation
+        // Environmental fluctuation updates
         if(t%env_span==0){
             if(t%(env_span*env_scale)== 0 && s4==0) mean_env_short= normal_dist_BM(mean_env,sd_env,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt));
             if(s4==1){
@@ -202,8 +218,13 @@ int main( int argc, char *argv[] ){
             }
             //
             for(i=0; i<N_spcs; ++i){
-                if(curr_env> Spcs[i][id_topt]) Spcs[i][id_conv]= Spcs[i][id_scal]*(1- (curr_env-Spcs[i][id_topt])*(curr_env-Spcs[i][id_topt])/Spcs[i][id_tinc]/Spcs[i][id_tinc]);
-                else Spcs[i][id_conv]= Spcs[i][id_scal]*exp(-1*((curr_env-Spcs[i][id_topt])/2/Spcs[i][id_tsgm])*((curr_env-Spcs[i][id_topt])/2/Spcs[i][id_tsgm]));
+                if (s0==1 || s0==0){
+                    if(curr_env> Spcs[i][id_topt]) Spcs[i][id_conv]= Spcs[i][id_scal]*(1- (curr_env-Spcs[i][id_topt])*(curr_env-Spcs[i][id_topt])/Spcs[i][id_tinc]/Spcs[i][id_tinc]);
+                    else Spcs[i][id_conv]= Spcs[i][id_scal]*exp(-1*((curr_env-Spcs[i][id_topt])/2/Spcs[i][id_tsgm])*((curr_env-Spcs[i][id_topt])/2/Spcs[i][id_tsgm]));
+                }
+                if (s0==3){
+                    Spcs[i][id_conv]= (1.0 / (Spcs[i][id_tsgm] * sqrt(2.0 * M_PI))) * exp(-((curr_env - Spcs[i][id_topt]) * (curr_env - Spcs[i][id_topt])) / (2.0 * Spcs[i][id_tsgm] * Spcs[i][id_tsgm]));
+                }
             }
         }
         // Reproduction
@@ -215,13 +236,9 @@ int main( int argc, char *argv[] ){
                 if(Spcs[j][id_weig]> 1.0) Spcs[j][id_weig]= 1.0;
                 weigh_dens+= Spcs[j][id_weig];
             }
-            // Ability for competition
+            // Fitness as population density multiplied by thermal-dependent per capita competitiveness
             for(j=0; j<N_spcs; ++j) PatchComp[j]= Popn[i][j]/Spcs[j][id_thrs]*Spcs[j][id_conv];
-            // Type 2 functional response for competition/ no competition
-                fecund_decm= modf(fecundity, &fecund_intg);
-                if(dsfmt_genrand_open_close(&dsfmt)< fecund_decm) fecund_stoc= fecund_intg;
-                else fecund_stoc= fecund_intg+ 1;
-            // 
+            // Allocating offspring to each species
             for(j=0; j<fecundity; ++j){
                 if(dsfmt_genrand_open_close(&dsfmt)< (weigh_dens/(1+weigh_dens))){
                     idx= RandFromProb(PatchComp,N_spcs,dsfmt_genrand_open_close(&dsfmt));
@@ -242,7 +259,6 @@ int main( int argc, char *argv[] ){
         // Mortality
         for(i=0; i<N_patch;++i){
             for(j=0;j<N_spcs;++j){
-                // Popn[i][j]= round(Popn[i][j]*(1-mortality));
                 temp_size= (int)Popn[i][j];
                 if(temp_size>0){
                     for(k=0; k<temp_size; ++k){
@@ -265,7 +281,6 @@ int main( int argc, char *argv[] ){
             Spcs[i][id_offs]= 0.0;
         }
         // Log the extinction events
-        // fprintf(log, "Tmin\tTmax\tTopt\tLifespan\n");
         for(i=0; i<N_spcs; ++i){
             if(Spcs[i][id_prnt]== 0.0){
                 Spcs[i][id_popn]= 0.0;
@@ -277,8 +292,10 @@ int main( int argc, char *argv[] ){
                     fprintf(log,"%lf\t", mean_env);
                     fprintf(log,"%lf\t", sd_env);
                     fprintf(log,"%lf\t", sd_env_short);
-                    fprintf(log,"%lf\t",(Spcs[i][id_topt]-Spcs[i][id_tsgm]*3.46164));
-                    fprintf(log,"%lf\t",(Spcs[i][id_topt]+Spcs[i][id_tinc]*0.974679));
+                    if(s0==3) fprintf(log,"%lf\t",(Spcs[i][id_topt]-Spcs[i][id_tsgm]*2.14597));
+                    else fprintf(log,"%lf\t",(Spcs[i][id_topt]-Spcs[i][id_tsgm]*3.46164));
+                    if(s0==3) fprintf(log,"%lf\t",(Spcs[i][id_topt]+Spcs[i][id_tsgm]*2.14597));
+                    else fprintf(log,"%lf\t",(Spcs[i][id_topt]+Spcs[i][id_tinc]*0.974679));
                     fprintf(log,"%lf\t", Spcs[i][id_topt]);
                     fprintf(log,"%lf\t",(t-Spcs[i][id_init]));
                     fprintf(log,"%d\n", rep);
@@ -287,7 +304,7 @@ int main( int argc, char *argv[] ){
             }
         }
     
-        // Immigration of new species through allopatric speciation+ migration
+        // Immigration of new species through allopatric speciation+ migration (evolutionary model)
         if(dsfmt_genrand_open_close(&dsfmt)< prob_migrate && s1==1){
             for(i=0; i<N_spcs_samp; ++i){
                 samp_id= floor(dsfmt_genrand_open_close(&dsfmt)*N_spcs);
@@ -295,15 +312,29 @@ int main( int argc, char *argv[] ){
                 for(j=0; j<N_patch; ++j) pop_temp+= Popn[j][samp_id];
                 if(pop_temp==0){
                     // Define the thermal performance curve
-                    Spcs[samp_id][id_scal]= -0.1;
-                    while((!(Spcs[samp_id][id_scal]> 0.0)||!(Spcs[samp_id][id_tinc]> 0.0))||!(Spcs[samp_id][id_tsgm]> 0.0)){
+                    if(s0==1){
+                        Spcs[samp_id][id_scal]= -0.1;
+                        while((!(Spcs[samp_id][id_scal]> 0.0)||!(Spcs[samp_id][id_tinc]> 0.0))||!(Spcs[samp_id][id_tsgm]> 0.0)){
+                            Spcs[samp_id][id_thrs]= 10.0;
+                            Spcs[samp_id][id_topt]= normal_dist_BM(avg_topt,sd_topt,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt));
+                            Spcs[samp_id][id_tinc]= normal_dist_BM(avg_tinc,sd_tinc,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt));
+                            Spcs[samp_id][id_tsgm]= normal_dist_BM(avg_tsgm,sd_tsgm,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt));
+                            Spcs[samp_id][id_scal]= (2.0/3*5+5*sqrt(M_PI))/(2.0/3*Spcs[samp_id][id_tinc]+Spcs[samp_id][id_tsgm]*sqrt(M_PI));
+                            if(s2==1) Spcs[samp_id][id_scal]= Spcs[samp_id][id_scal]*normal_dist_BM(1,0.1,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt)); ///// sd set to 0.1
+                            Spcs[samp_id][id_init]= (double)t;
+                            Spcs[samp_id][id_prnt]= 0.0;
+                            Spcs[samp_id][id_coff]= 0.0;
+                        }
+                    }
+                    if(s0==3){
+                        // Assuming normal distribution, mu= topt, sd= tsgm
+                        Spcs[samp_id][id_scal]= 1.0;
                         Spcs[samp_id][id_thrs]= 10.0;
                         Spcs[samp_id][id_topt]= normal_dist_BM(avg_topt,sd_topt,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt));
-                        Spcs[samp_id][id_tinc]= normal_dist_BM(avg_tinc,sd_tinc,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt));
+                        Spcs[samp_id][id_tinc]= 0.0;
                         Spcs[samp_id][id_tsgm]= normal_dist_BM(avg_tsgm,sd_tsgm,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt));
-                        Spcs[samp_id][id_scal]= (2.0/3*5+5*sqrt(M_PI))/(2.0/3*Spcs[samp_id][id_tinc]+Spcs[samp_id][id_tsgm]*sqrt(M_PI));
-                        if(s2==1) Spcs[samp_id][id_scal]= Spcs[samp_id][id_scal]*normal_dist_BM(1,0.1,dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt)); ///// sd set to 0.1
-                        Spcs[samp_id][id_init]= (double)t;
+                        if(s2==1) Spcs[samp_id][id_scal]= Spcs[samp_id][id_scal]*normal_dist_BM(1,0.25, dsfmt_genrand_open_close(&dsfmt),dsfmt_genrand_open_close(&dsfmt)); ///// sd set to 0.25
+                        Spcs[samp_id][id_init]= 0.0;
                         Spcs[samp_id][id_prnt]= 0.0;
                         Spcs[samp_id][id_coff]= 0.0;
                     }
@@ -315,14 +346,17 @@ int main( int argc, char *argv[] ){
                 }
             }
         }
+        
         // Print
         if(t== (T_limit-1)){
+            // Sum for each species
             for(i=0; i<N_spcs; ++i){
                 Spcs[i][id_popn]= 0.0;
                 for(j=0;j<N_patch; ++j){
                     Spcs[i][id_popn]+= Popn[j][i];
                 }
             }
+            // Test case
             if(s0==2){
                 fprintf(surv,"%lf\t", mean_env);
                 fprintf(surv,"%lf\t", sd_env);
@@ -337,14 +371,17 @@ int main( int argc, char *argv[] ){
                 }
                 fprintf(surv,"%d\n", rep);
             }
+            // Main case
             else{
                 for(i=0; i<N_spcs; ++i){
                     if(Spcs[i][id_popn]> 0){
                         fprintf(surv,"%lf\t", mean_env);
                         fprintf(surv,"%lf\t", sd_env);
                         fprintf(surv,"%lf\t", sd_env_short);
-                        fprintf(surv,"%lf\t",(Spcs[i][id_topt]-Spcs[i][id_tsgm]*3.46164));
-                        fprintf(surv,"%lf\t",(Spcs[i][id_topt]+Spcs[i][id_tinc]*0.974679));
+                        if(s0==3) fprintf(surv,"%lf\t",(Spcs[i][id_topt]-Spcs[i][id_tsgm]*2.14597));
+                        else fprintf(surv,"%lf\t",(Spcs[i][id_topt]-Spcs[i][id_tsgm]*3.46164));
+                        if(s0==3) fprintf(surv,"%lf\t",(Spcs[i][id_topt]+Spcs[i][id_tsgm]*2.14597));
+                        else fprintf(surv,"%lf\t",(Spcs[i][id_topt]+Spcs[i][id_tinc]*0.974679));
                         fprintf(surv,"%lf\t", Spcs[i][id_topt]);
                         fprintf(surv,"%lf\t", Spcs[i][id_tinc]);
                         fprintf(surv,"%lf\t", Spcs[i][id_tsgm]);
@@ -363,6 +400,7 @@ int main( int argc, char *argv[] ){
     time_end= time(NULL);
     printf("This simulation lasted %lf minutes.\n", (time_end-time_start)/ 60.0);
     fclose(surv);
+    fclose(log);
     // End
     return EXIT_SUCCESS;   
 }
