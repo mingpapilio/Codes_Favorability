@@ -1,6 +1,6 @@
 This folder contains our empirical data and code that are able to reproduce the results of Fig4 and Fig5.
 
-"FAV_hv_data.csv" is the data file contains mpth species level traits and corresponding ambient temperatures. In specific:
+"FAV_hv_data.csv" is the data file contains moth species level traits and corresponding ambient temperatures. In specific:
 Elev_up: Upper distribution limits
 Elev_low: Lower distribution limits
 Elev_mid: Mid-point of upper and lower distribution limits
