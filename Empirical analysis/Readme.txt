@@ -1,8 +1,9 @@
 This folder contains our empirical data and code that are able to reproduce the results of Fig4 and Fig5.
 
 "FAV_hv_data.csv" is the data file contains moth species level traits and corresponding ambient temperatures. In specific:
-Elev_up: Upper distribution limits
-Elev_low: Lower distribution limits
+
+Elev_up: Upper distribution limit
+Elev_low: Lower distribution limit
 Elev_mid: Mid-point of upper and lower distribution limits
 RS: Range size (Elev_up - Elev_low)
 W_length: Forewing length
