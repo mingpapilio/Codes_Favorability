@@ -6,19 +6,19 @@ This repository has the codes and data for the manuscript "__Warmer environments
 
 The repository is structured into four main directories, each corresponding to a major analysis section of the manuscript:
 
-### 1. Simulations
+### 1. **`Simulations`**
 This folder contains the (1) source codes for the eco-evolutionary individual-based model, and (2) the simulated data used in making main and extended figures.
 
-- **codes**: 
+- `codes`: 
 
-- **dSFMT-src-2.3.3**:
+- `dSFMT-src-2.3.3`: This is a dependency for the standard random number generator (Fast Mersenne Twister), equivalent to std::mt19937 in C++. Source code is available here `https://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/SFMT/`.
 
-- **data**:
+- `data`: The simulation results are here for reproduciability
 
-### 2. Empirical analysis
+### 2. **`Empirical analysis`**
 This folder contains our empirical data and code that are able to reproduce the results of Figure 4 and 5.
 
-- **FAV_hv_data.csv**: data file that contains moth species level traits and corresponding ambient temperatures.
+- `FAV_hv_data.csv`: data file that contains moth species level traits and corresponding ambient temperatures.
     - Coulmn names:
         - ``Elev_up``: Upper distribution limit
         - ``Elev_low``: Lower distribution limit
@@ -40,12 +40,12 @@ This folder contains our empirical data and code that are able to reproduce the 
         - ``DTmean``: Diurnal mean temperature
         - ``Group``: Group which species correspond to when applying assemblage-level analyses. For the meaning of the codes, please refer to Figure 4(a) in the article.
 
-- **'Fig4' folder**: This folder contains all codes needed to produce Figure 4b-j.
+- `/Fig4/`: This folder contains all codes needed to produce Figure 4b-j.
     - R scripts:
         - ``Fig4_hypervolume.R``: For hypervolume calculation and plotting in Figure 4b, 4e, 4h.
         - ``Fig4_TTrange_histogram.R``: For plotting histograms in Figure 4c, 4f, 4i.
         - ``Fig4_TTrange_MeanSD.R``: For calculating mean and SD of TTrange of each assemblage and plotting in Figure 4d, 4g, 4j.
-    - CSV file:
+    - CSV files:
         - ``hv_result.csv``: The hypervolume values used for analysis in this article, which should be reproducible by using 'Fig4_hypervolume.R'.
             - Column names:
                 - ``Location``: Location of the assemblage.
