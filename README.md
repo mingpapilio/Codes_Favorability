@@ -9,11 +9,23 @@ The repository is structured into four main directories, each corresponding to a
 ### 1. **`Simulations`**
 This folder contains the (1) source codes for the eco-evolutionary individual-based model, and (2) the simulated data used in making main and extended figures.
 
-- `codes`: 
+- `codes`: <br>
+    Running the codes takes two steps: compilation and execution. 
+    - Compilation <br>
+    Use the compiler you prefer and specify the extent of optimization, such as 
+    ```bash
+    gcc rtsc_nspc.c -lm -o2
+    ```
+    - Execution <br>
+    Then specify the temperature condition while executing the compiled file, such as 
+    ```bash
+    ./a.out mean=18.0 svar=2.5 lvar=0.0 &
+    ```
+    where `mean` is the average temperature, `svar` is the short-term variation, and `lvar` is the long-term variation.
 
 - `dSFMT-src-2.3.3`: This is a dependency for the standard random number generator (Fast Mersenne Twister), equivalent to std::mt19937 in C++. Source code is available here `https://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/SFMT/`.
 
-- `data`: The simulation results are here for reproduciability
+- `data`: The simulation results are here for reproduciability, arranged according to each figure (Fig. 2 and 3 use the same data in `Fig2`)
 
 ### 2. **`Empirical analysis`**
 This folder contains our empirical data and code that are able to reproduce the results of Figure 4 and 5.
