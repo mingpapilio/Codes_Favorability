@@ -1,6 +1,6 @@
 # Codes_Favorability
 
-This repository has the codes and data for the manuscript "__Warmer environments harbor greater thermal trait diversity__".  There are two sections in this repository: simulations and empirical analysis. 
+This repository has the codes and data for the manuscript "__Warmer environments harbor greater thermal trait diversity in moth assemblages__".  There are two sections in this repository: simulations and empirical analysis. 
 
 ## Description of the Data and File Structure
 
